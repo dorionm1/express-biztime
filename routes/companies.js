@@ -1,10 +1,14 @@
 const express = require("express");
 const router = express.Router();
+var slugify = require('slugify');
 const db = require("../db");
 
 router.get("/", async (req, res) => {
-    const results = await db.query(`SELECT * FROM companies`)
-    return res.json({"companies": results.rows})
+    const results = await db.query(
+        `SELECT * FROM companyindustry ci JOIN companies c ON ci.comp_code = c.code`
+    )
+        console.log(results.rows[0])
+    return res.json({"companies": results.rows[0]})
 });
 
 router.get("/:c", async (req, res) => {
@@ -17,12 +21,13 @@ router.get("/:c", async (req, res) => {
 
 router.post("/", async (req, res, next) => {
 try {
-    const { code, name, description } = req.body
+    const { name, description } = req.body
+    const code = slugify(name)
     const result = await db.query(
         `INSERT INTO companies (code, name, description)
         VALUES ('${code}','${name}','${description}')`
     )
-    return res.status(201).json({"company": code, name, description})
+    return res.status(201).json({"company": {code, name, description}})
 }
 catch (err) {
     return next(err)
